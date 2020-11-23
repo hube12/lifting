@@ -81,7 +81,7 @@ public class Main {
         @Override
         public String toString() {
             return "Data{" +
-                    "regionData=" + regionData +
+                    "regionData=" + regionData.chunkX+" "+regionData.chunkZ +
                     ", salt=" + salt +
                     '}';
         }
