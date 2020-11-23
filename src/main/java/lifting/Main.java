@@ -21,11 +21,10 @@ public class Main {
         // 124642613430296
         List<Data> dataList = new ArrayList<>();
         ChunkRand rand = new ChunkRand();
-        dataList.add(new Data(VILLAGE, -32,11));
-        dataList.add(new Data(VILLAGE, -22, 128));
-        dataList.add(new Data(VILLAGE, -29, 1319));
-        dataList.add(new Data(VILLAGE, -350, -26));
-        dataList.add(new Data(VILLAGE, -333, -2611));
+        dataList.add(new Data(OUTPOST,-224,-2476));
+        dataList.add(new Data(OUTPOST,-60,17));
+        dataList.add(new Data(OUTPOST,-48,128));
+        dataList.add(new Data(OUTPOST,198,239));
         for (Data data : dataList) {
             System.out.println(data);
         }
