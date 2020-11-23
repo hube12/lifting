@@ -25,6 +25,11 @@ public class Main {
         dataList.add(new Data(OUTPOST,-60,17));
         dataList.add(new Data(OUTPOST,-48,128));
         dataList.add(new Data(OUTPOST,198,239));
+        dataList.add(new Data(VILLAGE, -32,11));
+        dataList.add(new Data(VILLAGE, -22, 128));
+        dataList.add(new Data(VILLAGE, -29, 1319));
+        dataList.add(new Data(VILLAGE, -350, -26));
+        dataList.add(new Data(VILLAGE, -333, -2611));
         for (Data data : dataList) {
             System.out.println(data);
         }
