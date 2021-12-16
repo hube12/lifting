@@ -1,9 +1,9 @@
 package lifting;
 
-import kaptainwutax.mathutils.util.Mth;
-import kaptainwutax.seedutils.mc.ChunkRand;
-import kaptainwutax.seedutils.mc.MCVersion;
-import kaptainwutax.seedutils.mc.pos.BPos;
+import com.seedfinding.mccore.rand.ChunkRand;
+import com.seedfinding.mccore.util.pos.BPos;
+import com.seedfinding.mccore.version.MCVersion;
+import com.seedfinding.mcmath.util.Mth;
 
 import java.util.ArrayList;
 import java.util.HashMap;

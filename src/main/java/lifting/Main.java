@@ -1,71 +1,114 @@
 
 package lifting;
 
-import kaptainwutax.featureutils.structure.PillagerOutpost;
-import kaptainwutax.featureutils.structure.RegionStructure;
-import kaptainwutax.featureutils.structure.Village;
-import kaptainwutax.seedutils.mc.ChunkRand;
-import kaptainwutax.seedutils.mc.MCVersion;
+import com.seedfinding.mccore.rand.ChunkRand;
+import com.seedfinding.mccore.util.pos.CPos;
+import com.seedfinding.mccore.util.pos.RPos;
+import com.seedfinding.mccore.version.MCVersion;
+import com.seedfinding.mcfeature.structure.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class Main {
-    private static final MCVersion version = MCVersion.v1_14_4;
-    private static final PillagerOutpost OUTPOST = new PillagerOutpost(version);
-    private static final Village VILLAGE = new Village(version);
+    public static final MCVersion VERSION = MCVersion.v1_17;
+    public static final DesertPyramid DESERT_PYRAMID = new DesertPyramid(VERSION);
+    public static final SwampHut SWAMP_HUT = new SwampHut(VERSION);
+    public static final Village VILLAGE = new Village(VERSION);
+    public static final Igloo IGLOO = new Igloo(VERSION);
+    public static final JunglePyramid JUNGLE_TEMPLE = new JunglePyramid(VERSION);
+    public static final PillagerOutpost PILLAGER_OUTPOST = new PillagerOutpost(VERSION);
+    public static final Shipwreck SHIPWRECK = new Shipwreck(VERSION);
+
 
     public static void main(String[] args) {
+        long structureSeed = 90212;
         List<Data> dataList = new ArrayList<>();
-        ChunkRand rand = new ChunkRand();
-        dataList.add(new Data(OUTPOST, 20, 2));
-        dataList.add(new Data(VILLAGE, 15, 9));
-       //dataList.add(new Data(VILLAGE, 9, 0));
-        for (Data data : dataList) {
-            System.out.println(data);
-        }
-        for (long lowerBits = 0; lowerBits < 1L << 19; lowerBits++) {
-            boolean good = true;
 
-            for (Data data : dataList) {
-                rand.setRegionSeed(lowerBits, data.regionData.regionX, data.regionData.regionZ, data.salt, version);
-
-                if (rand.nextInt(24) % 4 != data.regionData.offsetX % 4 || rand.nextInt(24) % 4 != data.regionData.offsetZ % 4) {
-                    good = false;
-                    break;
-                }
-            }
-
-            if (!good) continue;
-            System.out.println("Found lower bits " + lowerBits);
-
-            for (long upperBits = 0; upperBits < 1L << (48 - 19); upperBits++) {
-                long seed = (upperBits << 19) | lowerBits;
-                boolean good2 = true;
-
-                for (Data data : dataList) {
-                    rand.setRegionSeed(seed, data.regionData.regionX, data.regionData.regionZ, data.salt, version);
-
-                    if (rand.nextInt(24) != data.regionData.offsetX || rand.nextInt(24) != data.regionData.offsetZ) {
-                        good2 = false;
-                        break;
-                    }
-                }
-
-                if (good2) System.out.println("Found world seed " + seed);
-            }
+        dataList.addAll(generateData(structureSeed, SWAMP_HUT, 3));
+        dataList.addAll(generateData(structureSeed, VILLAGE, 3));
+        dataList.addAll(generateData(structureSeed, IGLOO, 3));
+        dataList.addAll(generateData(structureSeed, PILLAGER_OUTPOST, 3));
+        dataList.addAll(generateData(structureSeed, DESERT_PYRAMID, 3));
+        dataList.addAll(generateData(structureSeed, JUNGLE_TEMPLE, 3));
+        dataList.addAll(generateData(structureSeed, SHIPWRECK, 3));
+        List<Long> seeds = crack(dataList);
+        for (Long seed : seeds) {
+            System.out.println(seed);
         }
     }
 
+    public static List<Long> crack(List<Data> dataList) {
+        // You could first lift on 1L<<18 with %2 since that would be a smaller range
+        // Then lift on 1<<19 with those 1<<18 fixed with % 4 and for nextInt(24)
+        // You can even do %8 on 1<<20 (however we included shipwreck so only nextInt(20) so 1<<19 is the max here
+        Stream<Long> lowerBitsStream = LongStream.range(0, 1L << 19).boxed().filter(lowerBits -> {
+            ChunkRand rand = new ChunkRand();
+            for (Data data : dataList) {
+                rand.setRegionSeed(lowerBits, data.regionData.regionX, data.regionData.regionZ, data.salt, VERSION);
+                if (rand.nextInt(data.structure.getOffset()) % 4 != data.regionData.offsetX % 4 || rand.nextInt(data.structure.getOffset()) % 4 != data.regionData.offsetZ % 4) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        Stream<Long> seedStream = lowerBitsStream.flatMap(lowerBits ->
+            LongStream.range(0, 1L << (48 - 19))
+                .boxed()
+                .map(upperBits -> (upperBits << 19) | lowerBits)
+        );
+
+        Stream<Long> strutureSeedStream = seedStream.filter(seed -> {
+            ChunkRand rand = new ChunkRand();
+            for (Data data : dataList) {
+                rand.setRegionSeed(seed, data.regionData.regionX, data.regionData.regionZ, data.salt, VERSION);
+                if (rand.nextInt(data.structure.getOffset()) != data.regionData.offsetX || rand.nextInt(data.structure.getOffset()) != data.regionData.offsetZ) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        return strutureSeedStream.parallel().collect(Collectors.toList());
+    }
+
+    public static List<Data> generateData(long structureSeed, UniformStructure<?> structure, int count) {
+        List<Data> res = new ArrayList<>(count);
+        ChunkRand rand = new ChunkRand();
+        for (int i = 0; i < count; i++) {
+            RPos rpos = getRandomRPos(structure);
+            CPos cPos = structure.getInRegion(structureSeed, rpos.getX(), rpos.getZ(), rand);
+            // WARNING Pillager outpost can be exploited to check the nextInt(5)!=0 also but they will produce some nulls here
+            if (cPos!=null){
+                res.add(new Data(structure, cPos));
+            }
+        }
+        return res;
+    }
+
+    public static RPos getRandomRPos(UniformStructure<?> structure) {
+        Random random = new Random();
+        return new RPos(random.nextInt(10000) - 5000, random.nextInt(10000) - 5000, structure.getSpacing());
+    }
 
     public static class Data {
-        public RegionStructure.Data<?> regionData;
+        public UniformStructure.Data<?> regionData;
         public int salt;
+        public UniformStructure<?> structure;
 
-        public Data(RegionStructure<?, ?> structure, int chunkX, int chunkZ) {
+        public Data(UniformStructure<?> structure, int chunkX, int chunkZ) {
             this.regionData = structure.at(chunkX, chunkZ);
             this.salt = structure.getSalt();
+            this.structure = structure;
+        }
+
+        public Data(UniformStructure<?> structure, CPos cPos) {
+            this(structure, cPos.getX(), cPos.getZ());
         }
 
         @Override
@@ -74,15 +117,15 @@ public class Main {
             if (o == null || getClass() != o.getClass()) return false;
             Data data = (Data) o;
             return salt == data.salt &&
-                    Objects.equals(regionData, data.regionData);
+                Objects.equals(regionData, data.regionData);
         }
 
         @Override
         public String toString() {
             return "Data{" +
-                    "regionData=" + regionData.chunkX+" "+regionData.chunkZ +
-                    ", salt=" + salt +
-                    '}';
+                "regionData=" + regionData.chunkX + " " + regionData.chunkZ +
+                ", salt=" + salt +
+                '}';
         }
 
         @Override
@@ -90,11 +133,11 @@ public class Main {
             return Objects.hash(regionData, salt);
         }
 
-        public RegionStructure.Data<?> getRegionData() {
+        public UniformStructure.Data<?> getRegionData() {
             return regionData;
         }
 
-        public void setRegionData(RegionStructure.Data<?> regionData) {
+        public void setRegionData(UniformStructure.Data<?> regionData) {
             this.regionData = regionData;
         }
     }
