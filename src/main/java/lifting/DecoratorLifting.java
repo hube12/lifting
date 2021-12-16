@@ -29,7 +29,6 @@ public class DecoratorLifting {
         System.out.println("Starting search for world seed [" + worldSeed + "]" + " with " + calls.size() + " calls.");
         System.out.println("Looking for valid " + bits + " lower bits...");
         long start = System.nanoTime();
-
         List<Map.Entry<BPos, Integer>> entries = new ArrayList<>(calls.entrySet());
 
         for(long lowerBits = 0; lowerBits < 1L << bits; lowerBits++) {
