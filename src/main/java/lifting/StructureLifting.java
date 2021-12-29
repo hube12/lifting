@@ -15,8 +15,9 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class Main {
+public class StructureLifting {
     public static final MCVersion VERSION = MCVersion.v1_17;
+
     public static final DesertPyramid DESERT_PYRAMID = new DesertPyramid(VERSION);
     public static final SwampHut SWAMP_HUT = new SwampHut(VERSION);
     public static final Village VILLAGE = new Village(VERSION);

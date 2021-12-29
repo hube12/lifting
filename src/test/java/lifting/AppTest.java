@@ -8,6 +8,6 @@ import static org.junit.Assert.*;
 
 public class AppTest {
     @Test public void testAppHasAGreeting() {
-        Main classUnderTest = new Main();
+        StructureLifting classUnderTest = new StructureLifting();
     }
 }

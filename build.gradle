@@ -9,7 +9,7 @@ java {
     }
 }
 application {
-    mainClassName = 'lifting.App'
+    mainClassName = 'lifting.StructureLifting'
 }
 
 tasks.withType(JavaCompile) {
